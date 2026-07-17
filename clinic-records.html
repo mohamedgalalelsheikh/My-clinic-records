@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Clinic Records</title>
+<style>
+  :root{
+    --bg:#F3F6F5;
+    --surface:#FFFFFF;
+    --surface-2:#EEF2F0;
+    --ink:#122421;
+    --ink-soft:#5C726E;
+    --ink-faint:#8A9C98;
+    --primary:#0F5C56;
+    --primary-dark:#0A3F3B;
+    --primary-tint:#E4F0EE;
+    --accent:#D98A3D;
+    --accent-tint:#FBEEDD;
+    --danger:#B0402F;
+    --danger-tint:#FBE9E6;
+    --border:#DCE3E0;
+    --radius:10px;
+    --radius-sm:6px;
+    --shadow:0 2px 10px rgba(15,50,45,0.08);
+    --shadow-lg:0 12px 40px rgba(10,40,36,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;}
+  input,textarea,select{font-family:inherit;font-size:15px;}
+  ::selection{background:var(--primary-tint);}
+
+  a{color:var(--primary);}
+
+  /* ---------- Layout shell ---------- */
+  #app{max-width:960px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;}
+
+  header.topbar{
+    padding:18px 20px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:8px;
+    background:linear-gradient(155deg,var(--primary),var(--primary-dark));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:15px;letter-spacing:0.5px;
+    flex-shrink:0;
+  }
+  .brand h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-0.2px;}
+  .brand .sub{font-size:12px;color:var(--ink-faint);display:block;margin-top:1px;}
+
+  .btn{
+    border:1px solid transparent;
+    border-radius:var(--radius-sm);
+    padding:9px 14px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    transition:transform .05s ease, filter .15s ease, background .15s ease;
+    white-space:nowrap;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;color:var(--primary);border-color:var(--border);}
+  .btn-ghost:hover{background:var(--primary-tint);}
+  .btn-soft{background:var(--surface-2);color:var(--ink);}
+  .btn-soft:hover{filter:brightness(0.97);}
+  .btn-danger{background:var(--danger-tint);color:var(--danger);}
+  .btn-danger:hover{background:#f5d6d0;}
+  .btn-sm{padding:6px 10px;font-size:12.5px;}
+  .btn-icon{padding:8px;width:36px;height:36px;justify-content:center;}
+  .btn[disabled]{opacity:0.45;cursor:not-allowed;}
+
+  main{flex:1;padding:18px 20px 60px;}
+
+  /* ---------- Search ---------- */
+  .search-row{display:flex;gap:8px;margin-bottom:16px;}
+  .search-field-select{
+    border:1px solid var(--border);border-radius:var(--radius-sm);
+    background:var(--surface);padding:0 10px;color:var(--ink-soft);
+    font-size:13px;font-weight:600;flex-shrink:0;
+  }
+  .search-input-wrap{position:relative;flex:1;}
+  .search-input-wrap input{
+    width:100%;padding:10px 12px 10px 34px;
+    border:1px solid var(--border);border-radius:var(--radius-sm);
+    background:var(--surface);
+  }
+  .search-input-wrap input:focus{outline:2px solid var(--primary);outline-offset:-1px;}
+  .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:15px;pointer-events:none;}
+
+  .list-meta{font-size:12.5px;color:var(--ink-faint);margin:2px 2px 10px;}
+
+  /* ---------- Patient list ---------- */
+  .patient-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:10px;
+    display:flex;align-items:center;gap:14px;
+    cursor:pointer;
+    transition:box-shadow .15s ease, border-color .15s ease;
+  }
+  .patient-card:hover{box-shadow:var(--shadow);border-color:#c7d6d2;}
+  .patient-avatar{
+    width:42px;height:42px;border-radius:50%;
+    background:var(--primary-tint);color:var(--primary-dark);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:15px;flex-shrink:0;
+  }
+  .patient-info{flex:1;min-width:0;}
+  .patient-name{font-weight:700;font-size:15.5px;}
+  .patient-sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;}
+  .patient-sub span{display:inline-flex;align-items:center;gap:4px;}
+  .record-chip{
+    background:var(--surface-2);color:var(--ink-soft);
+    font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:20px;
+    letter-spacing:0.3px;flex-shrink:0;
+  }
+  .chevron{color:var(--ink-faint);flex-shrink:0;}
+
+  .empty-state{
+    text-align:center;padding:50px 20px;color:var(--ink-faint);
+  }
+  .empty-state .big{font-size:34px;margin-bottom:8px;}
+  .empty-state p{margin:4px 0;font-size:14px;}
+
+  /* ---------- Patient detail ---------- */
+  .back-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+
+  .patient-header{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 18px 14px;
+    margin-bottom:0;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  }
+  .patient-header h2{margin:0 0 4px;font-size:20px;}
+  .patient-header .meta-line{font-size:13px;color:var(--ink-soft);display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;}
+  .patient-header .meta-line span{display:inline-flex;align-items:center;gap:5px;}
+  .header-actions{display:flex;gap:8px;flex-shrink:0;}
+
+  /* Folder-style tabs, echoing a physical patient chart */
+  .tabbar{
+    display:flex;gap:4px;
+    padding:10px 6px 0;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    background:var(--surface);
+    border-left:1px solid var(--border);
+    border-right:1px solid var(--border);
+  }
+  .tabbar::-webkit-scrollbar{display:none;}
+  .tab-btn{
+    background:var(--surface-2);
+    color:var(--ink-soft);
+    border:1px solid var(--border);
+    border-bottom:none;
+    border-radius:8px 8px 0 0;
+    padding:9px 14px 8px;
+    font-size:13px;font-weight:700;
+    cursor:pointer;
+    position:relative;top:1px;
+    flex-shrink:0;
+    transition:background .15s ease,color .15s ease;
+  }
+  .tab-btn.active{
+    background:var(--primary);
+    color:#fff;
+    border-color:var(--primary);
+  }
+  .tab-btn:not(.active):hover{background:#e4ebe8;}
+  .tab-count{
+    display:inline-block;margin-left:5px;
+    font-size:10.5px;background:rgba(255,255,255,0.25);
+    padding:1px 6px;border-radius:10px;
+  }
+  .tab-btn:not(.active) .tab-count{background:var(--border);color:var(--ink-faint);}
+
+  .tab-panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:0 0 var(--radius) var(--radius);
+    padding:16px;
+    min-height:200px;
+  }
+
+  .entry-form{
+    background:var(--primary-tint);
+    border:1px solid #cfe4e0;
+    border-radius:var(--radius-sm);
+    padding:12px;
+    margin-bottom:16px;
+  }
+  .entry-form .row{display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+  .entry-form label{display:block;font-size:11.5px;font-weight:700;color:var(--primary-dark);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.3px;}
+  .field{flex:1;min-width:140px;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;
+  }
+  .field textarea{resize:vertical;min-height:64px;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--primary);outline-offset:-1px;}
+  .mic-row{display:flex;gap:8px;align-items:flex-start;}
+  .mic-row .field{flex:1;}
+  .mic-btn{
+    width:38px;height:38px;border-radius:50%;
+    border:1px solid var(--border);background:#fff;color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;margin-top:19px;
+  }
+  .mic-btn.recording{background:var(--danger);border-color:var(--danger);color:#fff;animation:pulse 1.1s infinite;}
+  .mic-btn[disabled]{opacity:0.35;cursor:not-allowed;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(176,64,47,0.5);}70%{box-shadow:0 0 0 9px rgba(176,64,47,0);}100%{box-shadow:0 0 0 0 rgba(176,64,47,0);}}
+  .voice-note{font-size:11px;color:var(--ink-faint);margin-top:4px;}
+
+  .entries{display:flex;flex-direction:column;gap:10px;}
+  .entry-card{
+    border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:11px 13px;background:#fff;
+  }
+  .entry-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:5px;}
+  .entry-date{font-size:12px;font-weight:700;color:var(--primary-dark);}
+  .entry-diag{
+    font-size:11px;background:var(--accent-tint);color:#8a5420;
+    padding:2px 8px;border-radius:20px;font-weight:700;
+  }
+  .entry-text{font-size:13.5px;color:var(--ink);white-space:pre-wrap;line-height:1.45;}
+  .entry-actions{display:flex;gap:6px;margin-top:8px;}
+
+  .empty-tab{text-align:center;padding:34px 10px;color:var(--ink-faint);font-size:13.5px;}
+
+  /* Photos grid */
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+  .photo-thumb{
+    position:relative;border-radius:var(--radius-sm);overflow:hidden;
+    aspect-ratio:1/1;background:var(--surface-2);cursor:pointer;border:1px solid var(--border);
+  }
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb .photo-date{
+    position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(transparent,rgba(0,0,0,0.6));
+    color:#fff;font-size:10px;padding:12px 6px 4px;
+  }
+  .upload-tile{
+    border:2px dashed var(--border);border-radius:var(--radius-sm);
+    aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--ink-faint);cursor:pointer;font-size:12px;gap:4px;text-align:center;padding:6px;
+  }
+  .upload-tile:hover{border-color:var(--primary);color:var(--primary);}
+  .upload-tile .plus{font-size:22px;line-height:1;}
+
+  /* Documents */
+  .doc-row{
+    display:flex;align-items:center;gap:12px;
+    border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:10px 12px;margin-bottom:8px;background:#fff;
+  }
+  .doc-icon{width:36px;height:36px;border-radius:8px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .doc-info{flex:1;min-width:0;}
+  .doc-name{font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .doc-meta{font-size:11.5px;color:var(--ink-faint);margin-top:2px;}
+
+  /* WhatsApp tab */
+  .wa-templates{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .wa-chip{
+    border:1px solid var(--border);background:#fff;border-radius:20px;
+    padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);
+  }
+  .wa-chip:hover{border-color:var(--primary);color:var(--primary);}
+  .wa-chip.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .wa-preview{
+    background:#EAF7E9;border:1px solid #cfe8cd;border-radius:var(--radius-sm);
+    padding:10px;margin-bottom:12px;
+  }
+  .wa-preview textarea{width:100%;border:none;background:transparent;resize:vertical;min-height:110px;font-size:14px;line-height:1.7;}
+  .wa-preview textarea:focus{outline:none;}
+  .wa-send-row{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .wa-to{font-size:12.5px;color:var(--ink-soft);}
+
+  /* Modal */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(10,25,22,0.45);
+    display:flex;align-items:flex-end;justify-content:center;
+    z-index:100;
+  }
+  @media(min-width:640px){.modal-backdrop{align-items:center;}}
+  .modal-box{
+    background:var(--surface);width:100%;max-width:480px;
+    border-radius:16px 16px 0 0;
+    max-height:88vh;overflow-y:auto;
+    box-shadow:var(--shadow-lg);
+    padding:20px;
+  }
+  @media(min-width:640px){.modal-box{border-radius:16px;}}
+  .modal-title{font-size:17px;font-weight:700;margin:0 0 14px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+  .field-hint{font-size:11.5px;color:var(--ink-faint);margin-top:3px;}
+
+  .lightbox-backdrop{
+    position:fixed;inset:0;background:rgba(5,15,13,0.9);
+    display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;
+  }
+  .lightbox-backdrop img{max-width:100%;max-height:85vh;border-radius:8px;}
+  .lightbox-close{position:absolute;top:16px;right:16px;color:#fff;font-size:26px;background:none;border:none;cursor:pointer;}
+
+  .toast-wrap{position:fixed;bottom:18px;left:0;right:0;display:flex;justify-content:center;z-index:300;pointer-events:none;}
+  .toast{
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:30px;
+    font-size:13px;box-shadow:var(--shadow-lg);max-width:90vw;text-align:center;
+  }
+  .toast.danger{background:var(--danger);}
+
+  .storage-banner{
+    background:var(--accent-tint);border:1px solid #f0d3ac;color:#8a5420;
+    font-size:12.5px;border-radius:var(--radius-sm);padding:9px 12px;margin-bottom:14px;
+  }
+
+  @media(max-width:520px){
+    header.topbar{padding:14px 14px 12px;}
+    main{padding:14px 14px 60px;}
+    .brand h1{font-size:17px;}
+  }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">CR</div>
+      <div>
+        <h1>Clinic Records</h1>
+        <span class="sub">Private &middot; stored on this device only</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-soft" id="googleSyncBtn">☁️ Google sync</button>
+      <button class="btn btn-primary" id="newPatientBtn">+ New patient</button>
+    </div>
+  </header>
+  <main id="mainView"></main>
+</div>
+<div id="modalRoot"></div>
+<div id="toastRoot" class="toast-wrap"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   Utilities
+   ========================================================= */
+function uid(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10);
+}
+function esc(str){
+  if(str===undefined||str===null) return '';
+  return String(str).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function todayISO(){
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60000);
+  return local.toISOString().slice(0,10);
+}
+function fmtDate(iso){
+  if(!iso) return '—';
+  const parts = iso.split('-');
+  if(parts.length!==3) return iso;
+  const d = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+}
+function fmtBytes(n){
+  if(n===undefined||n===null) return '';
+  if(n < 1024*1024) return Math.max(1,Math.round(n/1024)) + ' KB';
+  return (n/(1024*1024)).toFixed(1) + ' MB';
+}
+function initials(name){
+  if(!name) return '?';
+  const parts = name.trim().split(/\s+/).slice(0,2);
+  return parts.map(p=>p[0]?p[0].toUpperCase():'').join('') || '?';
+}
+let toastTimer = null;
+function showToast(msg, danger){
+  const root = document.getElementById('toastRoot');
+  root.innerHTML = '<div class="toast'+(danger?' danger':'')+'">'+esc(msg)+'</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ root.innerHTML=''; }, 3200);
+}
+
+const MAX_FILE_BYTES = 4.4 * 1024 * 1024; // hard cap ~4.4MB after compression/as-is
+const PHOTO_TARGET_BYTES = 1.4 * 1024 * 1024; // soft target we try to compress toward
+
+/* =========================================================
+   IndexedDB layer
+   ========================================================= */
+const DB_NAME = 'clinicRecordsDB';
+const DB_VERSION = 1;
+const STORE = 'patients';
+let dbPromise = null;
+
+function openDB(){
+  if(dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject)=>{
+    if(!window.indexedDB){
+      reject(new Error('IndexedDB is not supported in this browser.'));
+      return;
+    }
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = function(e){
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(STORE)){
+        db.createObjectStore(STORE, {keyPath:'id'});
+      }
+    };
+    req.onsuccess = function(e){ resolve(e.target.result); };
+    req.onerror = function(e){ reject(e.target.error); };
+  });
+  return dbPromise;
+}
+function tx(mode){
+  return openDB().then(db => db.transaction(STORE, mode).objectStore(STORE));
+}
+function dbGetAll(){
+  return tx('readonly').then(store => new Promise((resolve,reject)=>{
+    const req = store.getAll();
+    req.onsuccess = ()=> resolve(req.result || []);
+    req.onerror = ()=> reject(req.error);
+  }));
+}
+function dbPut(patient){
+  return tx('readwrite').then(store => new Promise((resolve,reject)=>{
+    const req = store.put(patient);
+    req.onsuccess = ()=> resolve();
+    req.onerror = ()=> reject(req.error);
+  }));
+}
+function dbDelete(id){
+  return tx('readwrite').then(store => new Promise((resolve,reject)=>{
+    const req = store.delete(id);
+    req.onsuccess = ()=> resolve();
+    req.onerror = ()=> reject(req.error);
+  }));
+}
+
+/* =========================================================
+   Google Sheets + Drive sync (optional, off by default)
+   ========================================================= */
+const GCONF_KEY = 'clinicRecordsGoogleConfig';
+let googleConfig = {};
+(function loadGoogleConfig(){
+  try{ googleConfig = JSON.parse(localStorage.getItem(GCONF_KEY) || '{}'); }catch(e){ googleConfig = {}; }
+})();
+function saveGoogleConfig(){
+  try{ localStorage.setItem(GCONF_KEY, JSON.stringify(googleConfig)); }catch(e){}
+}
+
+let tokenClient = null;
+let accessToken = null;
+let syncing = false;
+
+function ensureTokenClient(){
+  if(!window.google || !window.google.accounts || !window.google.accounts.oauth2) return null;
+  if(!tokenClient || tokenClient.__clientId !== googleConfig.clientId){
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: googleConfig.clientId,
+      scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
+      callback: (resp)=>{
+        if(resp.error){ showToast('Google sign-in failed: ' + resp.error, true); return; }
+        accessToken = resp.access_token;
+        showToast('Connected to Google.');
+        renderGoogleModalBody();
+      }
+    });
+    tokenClient.__clientId = googleConfig.clientId;
+  }
+  return tokenClient;
+}
+function connectGoogle(){
+  if(!googleConfig.clientId){ showToast('Paste your Google Client ID first.', true); return; }
+  const tc = ensureTokenClient();
+  if(!tc){ showToast('Google sign-in is still loading — wait a second and try again.', true); return; }
+  tc.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
+}
+
+async function driveUpload(blob, filename, mimeType, folderId){
+  const meta = { name: filename, mimeType: mimeType || blob.type || 'application/octet-stream' };
+  if(folderId) meta.parents = [folderId];
+  const boundary = 'clinicrecords-' + Date.now();
+  const delimiter = '\r\n--' + boundary + '\r\n';
+  const closeDelim = '\r\n--' + boundary + '--';
+  const metaPart = delimiter + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(meta);
+  const mediaPart = delimiter + 'Content-Type: ' + meta.mimeType + '\r\n\r\n';
+  const body = new Blob([metaPart, mediaPart, blob, closeDelim]);
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer ' + accessToken, 'Content-Type':'multipart/related; boundary="' + boundary + '"' },
+    body
+  });
+  if(!res.ok) throw new Error('Drive upload failed (' + res.status + ')');
+  return res.json();
+}
+async function createDriveFolder(name){
+  const res = await fetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer ' + accessToken, 'Content-Type':'application/json' },
+    body: JSON.stringify({ name, mimeType:'application/vnd.google-apps.folder' })
+  });
+  if(!res.ok) throw new Error('Could not create Drive folder (' + res.status + ')');
+  return (await res.json()).id;
+}
+async function createSpreadsheet(title){
+  const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer ' + accessToken, 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      properties:{ title },
+      sheets:['Patients','Visits','Complaints','Operative','Photos','Documents'].map(t=>({properties:{title:t}}))
+    })
+  });
+  if(!res.ok) throw new Error('Could not create spreadsheet (' + res.status + ')');
+  return (await res.json()).spreadsheetId;
+}
+async function clearSheetRange(spreadsheetId, range){
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:clear`, {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer ' + accessToken }
+  });
+  if(!res.ok) throw new Error('Sheets clear failed on ' + range + ' (' + res.status + ')');
+}
+async function writeSheetValues(spreadsheetId, range, rows){
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {
+    method:'PUT',
+    headers:{ 'Authorization':'Bearer ' + accessToken, 'Content-Type':'application/json' },
+    body: JSON.stringify({ values: rows })
+  });
+  if(!res.ok) throw new Error('Sheets write failed on ' + range + ' (' + res.status + ')');
+}
+
+function setSyncStatus(msg){
+  const el = document.getElementById('gSyncStatus');
+  if(el) el.textContent = msg;
+}
+
+async function fullSyncToGoogle(){
+  if(syncing) return;
+  if(!accessToken){ showToast('Connect your Google account first.', true); return; }
+  syncing = true;
+  setSyncStatus('Starting sync…');
+  try{
+    if(!googleConfig.spreadsheetId){
+      setSyncStatus('Creating spreadsheet…');
+      googleConfig.spreadsheetId = await createSpreadsheet('Clinic Records Backup');
+      saveGoogleConfig();
+    }
+    if(!googleConfig.folderId){
+      setSyncStatus('Creating Drive folder…');
+      googleConfig.folderId = await createDriveFolder('Clinic Records Files');
+      saveGoogleConfig();
+    }
+
+    setSyncStatus('Uploading photos & documents…');
+    for(const p of state.patients){
+      for(const ph of (p.photos||[])){
+        if(!ph.driveFileId && ph.blob){
+          const filename = (p.name||'patient').replace(/[^a-z0-9]+/gi,'_') + '_photo_' + ph.date + '_' + ph.id.slice(0,6) + '.jpg';
+          const info = await driveUpload(ph.blob, filename, 'image/jpeg', googleConfig.folderId);
+          ph.driveFileId = info.id; ph.driveLink = info.webViewLink;
+        }
+      }
+      for(const d of (p.documents||[])){
+        if(!d.driveFileId && d.blob){
+          const info = await driveUpload(d.blob, d.name, d.mime, googleConfig.folderId);
+          d.driveFileId = info.id; d.driveLink = info.webViewLink;
+        }
+      }
+      await dbPut(p);
+    }
+
+    setSyncStatus('Writing spreadsheet rows…');
+    const patRows = [['ID','Record #','Name','Phone','DOB','Created']];
+    const visRows = [['Patient','Record #','Date','Diagnosis','Note']];
+    const compRows = [['Patient','Record #','Date','Complaint']];
+    const opRows = [['Patient','Record #','Date','Operative note']];
+    const phoRows = [['Patient','Record #','Date','Drive link','Size (KB)']];
+    const docRows = [['Patient','Record #','Date','File name','Drive link','Size (KB)']];
+
+    state.patients.forEach(p=>{
+      patRows.push([p.id, p.recordNumber||'', p.name||'', p.phone||'', p.dob||'', p.createdAt ? new Date(p.createdAt).toISOString() : '']);
+      (p.visits||[]).forEach(v=> visRows.push([p.name||'', p.recordNumber||'', v.date||'', v.diagnosis||'', v.note||'']));
+      (p.complaints||[]).forEach(c=> compRows.push([p.name||'', p.recordNumber||'', c.date||'', c.text||'']));
+      (p.operative||[]).forEach(o=> opRows.push([p.name||'', p.recordNumber||'', o.date||'', o.text||'']));
+      (p.photos||[]).forEach(ph=> phoRows.push([p.name||'', p.recordNumber||'', ph.date||'', ph.driveLink||'', Math.round((ph.sizeBytes||0)/1024)]));
+      (p.documents||[]).forEach(d=> docRows.push([p.name||'', p.recordNumber||'', d.date||'', d.name||'', d.driveLink||'', Math.round((d.sizeBytes||0)/1024)]));
+    });
+
+    const sheets = { Patients:patRows, Visits:visRows, Complaints:compRows, Operative:opRows, Photos:phoRows, Documents:docRows };
+    for(const tab in sheets){
+      setSyncStatus('Writing "' + tab + '" tab…');
+      await clearSheetRange(googleConfig.spreadsheetId, tab + '!A1:Z200000');
+      await writeSheetValues(googleConfig.spreadsheetId, tab + '!A1', sheets[tab]);
+    }
+
+    googleConfig.lastSynced = Date.now();
+    saveGoogleConfig();
+    setSyncStatus('');
+    showToast('Synced to Google Sheets & Drive.');
+  }catch(err){
+    console.error(err);
+    setSyncStatus('');
+    if(String(err.message).indexOf('401') !== -1){
+      accessToken = null;
+      showToast('Your Google session expired — reconnect and sync again.', true);
+    } else {
+      showToast('Sync failed: ' + err.message, true);
+    }
+  }finally{
+    syncing = false;
+    renderGoogleModalBody();
+  }
+}
+
+function openGoogleSyncModal(){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-box" style="max-width:520px;">
+      <h3 class="modal-title">Google Sheets &amp; Drive sync</h3>
+      <div class="storage-banner">This sends every patient's name, phone, visits, complaints, operative notes, photos and documents to your own Google account (Sheets + Drive). It only runs when you tap "Sync now" below — nothing syncs automatically in the background. Requires this file to be opened over https (e.g. GitHub Pages) — Google sign-in does not work when opened as a local file directly.</div>
+      <div id="gModalBody"></div>
+      <div class="modal-actions"><button class="btn btn-soft" id="mClose">Close</button></div>
+    </div>
+  </div>`;
+  document.getElementById('mClose').addEventListener('click', closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click', e=>{ if(e.target.id==='modalBackdrop') closeModal(); });
+  renderGoogleModalBody();
+}
+function renderGoogleModalBody(){
+  const el = document.getElementById('gModalBody');
+  if(!el) return;
+  const connected = !!accessToken;
+  let html = '';
+  html += `<div class="field" style="margin-bottom:10px;">
+    <label>Google OAuth Client ID</label>
+    <input type="text" id="gClientId" value="${esc(googleConfig.clientId||'')}" placeholder="xxxxxxxx.apps.googleusercontent.com">
+    <div class="field-hint">From Google Cloud Console → APIs &amp; Services → Credentials. Enable the Sheets API and Drive API first, then create an OAuth Client ID (Web application) and add this page's URL under Authorized JavaScript origins.</div>
+  </div>`;
+  html += `<div class="field" style="margin-bottom:10px;">
+    <label>Spreadsheet ID (optional)</label>
+    <input type="text" id="gSheetId" value="${esc(googleConfig.spreadsheetId||'')}" placeholder="Leave blank — one will be created on first sync">
+  </div>`;
+  html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+    <button class="btn btn-soft btn-sm" id="gConnectBtn">${connected ? '✓ Connected' : 'Connect Google account'}</button>
+    <button class="btn btn-primary btn-sm" id="gSyncNowBtn" ${connected ? '' : 'disabled'}>Sync now</button>
+    <button class="btn btn-danger btn-sm" id="gForgetBtn">Forget these settings</button>
+  </div>`;
+  html += `<div id="gSyncStatus" style="font-size:12.5px;color:var(--ink-soft);min-height:16px;"></div>`;
+  html += `<div class="field-hint">${googleConfig.lastSynced ? 'Last synced ' + new Date(googleConfig.lastSynced).toLocaleString() : 'Never synced yet.'}</div>`;
+  if(googleConfig.spreadsheetId){
+    html += `<div class="field-hint"><a href="https://docs.google.com/spreadsheets/d/${esc(googleConfig.spreadsheetId)}" target="_blank" rel="noopener">Open spreadsheet ↗</a></div>`;
+  }
+  el.innerHTML = html;
+
+  document.getElementById('gClientId').addEventListener('change', e=>{
+    googleConfig.clientId = e.target.value.trim();
+    saveGoogleConfig();
+    tokenClient = null;
+    accessToken = null;
+    renderGoogleModalBody();
+  });
+  document.getElementById('gSheetId').addEventListener('change', e=>{
+    googleConfig.spreadsheetId = e.target.value.trim();
+    saveGoogleConfig();
+  });
+  document.getElementById('gConnectBtn').addEventListener('click', connectGoogle);
+  document.getElementById('gSyncNowBtn').addEventListener('click', fullSyncToGoogle);
+  document.getElementById('gForgetBtn').addEventListener('click', ()=>{
+    googleConfig = {};
+    accessToken = null;
+    tokenClient = null;
+    saveGoogleConfig();
+    showToast('Google sync settings cleared. Data already sent to Google is not deleted from your Drive/Sheets by this.');
+    renderGoogleModalBody();
+  });
+}
+
+/* =========================================================
+   App state
+   ========================================================= */
+const state = {
+  patients: [],
+  view: 'list',          // 'list' | 'detail'
+  currentId: null,
+  tab: 'visits',
+  searchField: 'all',
+  searchQuery: '',
+  waTemplate: null,
+  waText: ''
+};
+
+function newPatientShell(){
+  return {
+    id: uid(),
+    recordNumber: '',
+    name: '',
+    phone: '',
+    dob: '',
+    createdAt: Date.now(),
+    visits: [],
+    complaints: [],
+    operative: [],
+    photos: [],
+    documents: []
+  };
+}
+
+function getCurrent(){
+  return state.patients.find(p=>p.id===state.currentId) || null;
+}
+function nextRecordNumber(){
+  let max = 1000;
+  state.patients.forEach(p=>{
+    const n = parseInt(String(p.recordNumber).replace(/[^0-9]/g,''),10);
+    if(!isNaN(n) && n>max) max = n;
+  });
+  return String(max+1);
+}
+
+async function loadAll(){
+  try{
+    state.patients = await dbGetAll();
+    state.patients.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+  }catch(err){
+    console.error(err);
+    showToast('Could not open local storage: ' + err.message, true);
+    state.patients = [];
+  }
+}
+
+/* =========================================================
+   Rendering — list view
+   ========================================================= */
+function fieldMatches(p, field, q){
+  q = q.toLowerCase();
+  const checks = {
+    name: () => (p.name||'').toLowerCase().includes(q),
+    record: () => (p.recordNumber||'').toLowerCase().includes(q),
+    phone: () => (p.phone||'').toLowerCase().includes(q),
+    visitdate: () => (p.visits||[]).some(v => (v.date||'').includes(q) || fmtDate(v.date).toLowerCase().includes(q)),
+    diagnosis: () => (p.visits||[]).some(v => (v.diagnosis||'').toLowerCase().includes(q))
+  };
+  if(field === 'all'){
+    return Object.keys(checks).some(k => checks[k]());
+  }
+  return checks[field] ? checks[field]() : false;
+}
+
+function filteredPatients(){
+  const q = state.searchQuery.trim();
+  if(!q) return state.patients;
+  return state.patients.filter(p => fieldMatches(p, state.searchField, q));
+}
+
+function renderList(){
+  const list = filteredPatients();
+  let html = '';
+  html += '<div class="search-row">';
+  html += '<select class="search-field-select" id="searchFieldSel">';
+  [['all','All fields'],['name','Name'],['record','Record #'],['phone','Phone'],['visitdate','Visit date'],['diagnosis','Diagnosis']]
+    .forEach(([v,l])=>{ html += `<option value="${v}"${state.searchField===v?' selected':''}>${esc(l)}</option>`; });
+  html += '</select>';
+  html += '<div class="search-input-wrap"><span class="search-icon">&#128269;</span>';
+  html += `<input type="text" id="searchInput" placeholder="Search patients…" value="${esc(state.searchQuery)}"></div>`;
+  html += '</div>';
+
+  if(state.patients.length===0){
+    html += '<div class="empty-state"><div class="big">🗂️</div><p><strong>No patients yet</strong></p><p>Tap "New patient" to create the first record.</p></div>';
+  } else if(list.length===0){
+    html += '<div class="empty-state"><div class="big">🔍</div><p>No matches for that search.</p></div>';
+  } else {
+    html += `<div class="list-meta">${list.length} patient${list.length===1?'':'s'}</div>`;
+    html += '<div id="patientList">';
+    list.forEach(p=>{
+      const lastVisit = (p.visits||[]).slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''))[0];
+      html += `<div class="patient-card" data-id="${p.id}">
+        <div class="patient-avatar">${esc(initials(p.name))}</div>
+        <div class="patient-info">
+          <div class="patient-name">${esc(p.name)||'Unnamed patient'}</div>
+          <div class="patient-sub">
+            <span>📞 ${esc(p.phone)||'—'}</span>
+            ${lastVisit ? `<span>Last visit ${fmtDate(lastVisit.date)}</span>` : '<span>No visits logged</span>'}
+          </div>
+        </div>
+        <div class="record-chip">#${esc(p.recordNumber)}</div>
+        <div class="chevron">›</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('mainView').innerHTML = html;
+
+  document.getElementById('searchFieldSel').addEventListener('change', e=>{
+    state.searchField = e.target.value; renderList();
+  });
+  const si = document.getElementById('searchInput');
+  si.addEventListener('input', e=>{ state.searchQuery = e.target.value; renderList(); });
+  si.focus({preventScroll:true});
+  si.selectionStart = si.selectionEnd = si.value.length;
+
+  document.querySelectorAll('.patient-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      state.currentId = card.getAttribute('data-id');
+      state.view = 'detail';
+      state.tab = 'visits';
+      state.waTemplate = null;
+      state.waText = '';
+      render();
+    });
+  });
+}
+
+/* =========================================================
+   Rendering — patient detail shell
+   ========================================================= */
+const TABS = [
+  {key:'visits', label:'Visits', icon:'📋'},
+  {key:'complaints', label:'Complaints', icon:'💬'},
+  {key:'operative', label:'Operative', icon:'🩺'},
+  {key:'photos', label:'Photos', icon:'📷'},
+  {key:'documents', label:'Documents', icon:'📄'},
+  {key:'whatsapp', label:'WhatsApp', icon:'✅'}
+];
+
+function renderDetail(){
+  const p = getCurrent();
+  if(!p){ state.view='list'; render(); return; }
+
+  let html = '';
+  html += '<div class="back-row"><button class="btn btn-soft btn-sm" id="backBtn">← All patients</button></div>';
+  html += `<div class="patient-header">
+    <div>
+      <h2>${esc(p.name)||'Unnamed patient'}</h2>
+      <div class="meta-line">
+        <span>Record #${esc(p.recordNumber)}</span>
+        <span>📞 ${esc(p.phone)||'—'}</span>
+        ${p.dob ? `<span>DOB ${fmtDate(p.dob)}</span>` : ''}
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-soft btn-sm" id="editPatientBtn">Edit</button>
+      <button class="btn btn-danger btn-sm" id="deletePatientBtn">Delete</button>
+    </div>
+  </div>`;
+
+  html += '<div class="tabbar">';
+  TABS.forEach(t=>{
+    const count = t.key==='photos' ? (p.photos||[]).length
+      : t.key==='documents' ? (p.documents||[]).length
+      : t.key==='visits' ? (p.visits||[]).length
+      : t.key==='complaints' ? (p.complaints||[]).length
+      : t.key==='operative' ? (p.operative||[]).length
+      : null;
+    html += `<button class="tab-btn${state.tab===t.key?' active':''}" data-tab="${t.key}">
+      ${t.icon} ${t.label}${count!==null ? `<span class="tab-count">${count}</span>` : ''}
+    </button>`;
+  });
+  html += '</div>';
+
+  html += '<div class="tab-panel" id="tabPanel"></div>';
+
+  document.getElementById('mainView').innerHTML = html;
+
+  document.getElementById('backBtn').addEventListener('click', ()=>{ state.view='list'; render(); });
+  document.getElementById('editPatientBtn').addEventListener('click', ()=> openPatientModal(p));
+  document.getElementById('deletePatientBtn').addEventListener('click', ()=> confirmDeletePatient(p));
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.tab = btn.getAttribute('data-tab');
+      renderTabPanel();
+    });
+  });
+
+  renderTabPanel();
+}
+
+function renderTabPanel(){
+  const panel = document.getElementById('tabPanel');
+  if(!panel) return;
+  const p = getCurrent();
+  if(!p) return;
+  switch(state.tab){
+    case 'visits': panel.innerHTML = visitsTabHTML(p); wireVisitsTab(p); break;
+    case 'complaints': panel.innerHTML = dictationTabHTML(p, 'complaints', 'Complaint'); wireDictationTab(p, 'complaints'); break;
+    case 'operative': panel.innerHTML = dictationTabHTML(p, 'operative', 'Operative note'); wireDictationTab(p, 'operative'); break;
+    case 'photos': panel.innerHTML = photosTabHTML(p); wirePhotosTab(p); break;
+    case 'documents': panel.innerHTML = documentsTabHTML(p); wireDocumentsTab(p); break;
+    case 'whatsapp': panel.innerHTML = whatsappTabHTML(p); wireWhatsappTab(p); break;
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.getAttribute('data-tab')===state.tab);
+  });
+}
+
+/* ---------- Visits tab ---------- */
+function visitsTabHTML(p){
+  let html = `<div class="entry-form">
+    <div class="row">
+      <div class="field"><label>Date</label><input type="date" id="visitDate" value="${todayISO()}"></div>
+      <div class="field"><label>Diagnosis</label><input type="text" id="visitDiag" placeholder="e.g. Hypertension follow-up"></div>
+    </div>
+    <div class="row"><div class="field"><label>Note</label><textarea id="visitNote" placeholder="Visit notes…"></textarea></div></div>
+    <button class="btn btn-primary btn-sm" id="addVisitBtn">+ Add visit</button>
+  </div>`;
+  const visits = (p.visits||[]).slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  if(visits.length===0){
+    html += '<div class="empty-tab">No visits logged yet.</div>';
+  } else {
+    html += '<div class="entries">';
+    visits.forEach(v=>{
+      html += `<div class="entry-card">
+        <div class="entry-top">
+          <span class="entry-date">${fmtDate(v.date)}</span>
+          ${v.diagnosis ? `<span class="entry-diag">${esc(v.diagnosis)}</span>` : ''}
+        </div>
+        ${v.note ? `<div class="entry-text">${esc(v.note)}</div>` : ''}
+        <div class="entry-actions"><button class="btn btn-danger btn-sm" data-del-visit="${v.id}">Delete</button></div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  return html;
+}
+function wireVisitsTab(p){
+  document.getElementById('addVisitBtn').addEventListener('click', async ()=>{
+    const date = document.getElementById('visitDate').value || todayISO();
+    const diagnosis = document.getElementById('visitDiag').value.trim();
+    const note = document.getElementById('visitNote').value.trim();
+    if(!diagnosis && !note){ showToast('Add a diagnosis or a note first.', true); return; }
+    p.visits = p.visits || [];
+    p.visits.push({id:uid(), date, diagnosis, note});
+    await dbPut(p);
+    showToast('Visit added.');
+    renderTabPanel();
+    refreshTabCounts();
+  });
+  document.querySelectorAll('[data-del-visit]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      p.visits = (p.visits||[]).filter(v=>v.id!==btn.getAttribute('data-del-visit'));
+      await dbPut(p);
+      renderTabPanel();
+      refreshTabCounts();
+    });
+  });
+}
+
+/* ---------- Complaints / Operative (shared dictation pattern) ---------- */
+function dictationTabHTML(p, key, label){
+  const listLabel = key==='complaints' ? 'complaints' : 'operative notes';
+  let html = `<div class="entry-form">
+    <div class="row">
+      <div class="field" style="max-width:170px;"><label>Date</label><input type="date" id="${key}Date" value="${todayISO()}"></div>
+    </div>
+    <div class="mic-row">
+      <div class="field"><label>${esc(label)}</label><textarea id="${key}Text" placeholder="Type, or tap the mic to dictate…"></textarea></div>
+      <button class="mic-btn" id="${key}MicBtn" title="Dictate">🎤</button>
+    </div>
+    <div class="voice-note" id="${key}VoiceNote"></div>
+    <button class="btn btn-primary btn-sm" id="${key}AddBtn" style="margin-top:8px;">+ Add ${esc(label.toLowerCase())}</button>
+  </div>`;
+  const items = (p[key]||[]).slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  if(items.length===0){
+    html += `<div class="empty-tab">No ${listLabel} recorded yet.</div>`;
+  } else {
+    html += '<div class="entries">';
+    items.forEach(it=>{
+      html += `<div class="entry-card">
+        <div class="entry-top"><span class="entry-date">${fmtDate(it.date)}</span></div>
+        <div class="entry-text">${esc(it.text)}</div>
+        <div class="entry-actions"><button class="btn btn-danger btn-sm" data-del="${it.id}">Delete</button></div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  return html;
+}
+function getSpeechRecognitionCtor(){
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+function wireDictationTab(p, key){
+  const addBtn = document.getElementById(key+'AddBtn');
+  addBtn.addEventListener('click', async ()=>{
+    const date = document.getElementById(key+'Date').value || todayISO();
+    const text = document.getElementById(key+'Text').value.trim();
+    if(!text){ showToast('Nothing to save yet.', true); return; }
+    p[key] = p[key] || [];
+    p[key].push({id:uid(), date, text});
+    await dbPut(p);
+    showToast('Saved.');
+    renderTabPanel();
+    refreshTabCounts();
+  });
+  document.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      p[key] = (p[key]||[]).filter(it=>it.id!==btn.getAttribute('data-del'));
+      await dbPut(p);
+      renderTabPanel();
+      refreshTabCounts();
+    });
+  });
+
+  const micBtn = document.getElementById(key+'MicBtn');
+  const noteEl = document.getElementById(key+'VoiceNote');
+  const Ctor = getSpeechRecognitionCtor();
+  if(!Ctor){
+    micBtn.disabled = true;
+    noteEl.textContent = 'Voice dictation isn\u2019t supported in this browser — please type instead.';
+    return;
+  }
+  let recognizer = null;
+  let recording = false;
+  micBtn.addEventListener('click', ()=>{
+    if(recording){
+      recognizer && recognizer.stop();
+      return;
+    }
+    recognizer = new Ctor();
+    recognizer.lang = 'en-US';
+    recognizer.continuous = true;
+    recognizer.interimResults = false;
+    const textarea = document.getElementById(key+'Text');
+    recognizer.onstart = ()=>{ recording = true; micBtn.classList.add('recording'); noteEl.textContent = 'Listening… tap the mic again to stop.'; };
+    recognizer.onerror = (e)=>{ noteEl.textContent = 'Voice input error: ' + (e.error || 'unknown') + '. You can keep typing instead.'; };
+    recognizer.onend = ()=>{
+      recording = false;
+      micBtn.classList.remove('recording');
+      if(noteEl.textContent.indexOf('error') === -1) noteEl.textContent = '';
+    };
+    recognizer.onresult = (e)=>{
+      let finalText = '';
+      for(let i=e.resultIndex; i<e.results.length; i++){
+        if(e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      }
+      if(finalText){
+        const sep = textarea.value && !/\s$/.test(textarea.value) ? ' ' : '';
+        textarea.value = (textarea.value + sep + finalText.trim() + ' ').replace(/\s+/g,' ').trim() + ' ';
+      }
+    };
+    try{ recognizer.start(); }catch(err){ noteEl.textContent = 'Could not start voice input: ' + err.message; }
+  });
+}
+
+/* ---------- Photos tab ---------- */
+function photosTabHTML(p){
+  let html = '<div class="storage-banner">Photos are compressed automatically to keep storage efficient. Individual files cap around 4–4.5MB.</div>';
+  html += '<div class="photo-grid">';
+  html += `<label class="upload-tile" id="photoUploadTile"><span class="plus">＋</span>Add photo<input type="file" accept="image/*" id="photoInput" style="display:none;" multiple></label>`;
+  const photos = (p.photos||[]).slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  photos.forEach(ph=>{
+    html += `<div class="photo-thumb" data-photo="${ph.id}"><img src="${ph.url}" alt="Photo"><div class="photo-date">${fmtDate(ph.date)}</div></div>`;
+  });
+  html += '</div>';
+  return html;
+}
+function wirePhotosTab(p){
+  const input = document.getElementById('photoInput');
+  input.addEventListener('change', async ()=>{
+    const files = Array.from(input.files || []);
+    input.value = '';
+    for(const file of files){
+      await handlePhotoUpload(p, file);
+    }
+    renderTabPanel();
+    refreshTabCounts();
+  });
+  document.querySelectorAll('[data-photo]').forEach(tile=>{
+    tile.addEventListener('click', ()=>{
+      const ph = (p.photos||[]).find(x=>x.id===tile.getAttribute('data-photo'));
+      if(ph) openLightbox(p, ph);
+    });
+  });
+}
+
+function compressImage(file){
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      const maxDim = 1600;
+      let {width, height} = img;
+      if(width > maxDim || height > maxDim){
+        if(width >= height){ height = Math.round(height * (maxDim/width)); width = maxDim; }
+        else { width = Math.round(width * (maxDim/height)); height = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+
+      const tryQuality = (q)=>{
+        canvas.toBlob(blob=>{
+          if(!blob){ reject(new Error('Could not process image.')); return; }
+          if(blob.size > PHOTO_TARGET_BYTES && q > 0.35){
+            tryQuality(q - 0.15);
+          } else {
+            resolve(blob);
+          }
+        }, 'image/jpeg', q);
+      };
+      tryQuality(0.85);
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('Could not read that image.')); };
+    img.src = url;
+  });
+}
+
+async function handlePhotoUpload(p, file){
+  try{
+    const blob = await compressImage(file);
+    if(blob.size > MAX_FILE_BYTES){
+      showToast(`Skipped "${file.name}" — still too large after compression (${fmtBytes(blob.size)}).`, true);
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    p.photos = p.photos || [];
+    p.photos.push({id:uid(), date: todayISO(), blob, url, sizeBytes: blob.size, mime:'image/jpeg'});
+    await dbPut(p);
+    showToast('Photo added (' + fmtBytes(blob.size) + ').');
+  }catch(err){
+    console.error(err);
+    showToast('Could not add "' + file.name + '": ' + err.message, true);
+  }
+}
+
+function openLightbox(p, photo){
+  const el = document.createElement('div');
+  el.className = 'lightbox-backdrop';
+  el.innerHTML = `<button class="lightbox-close" id="lbClose">&times;</button><img src="${photo.url}" alt="Photo">
+    <div style="position:absolute;bottom:22px;display:flex;gap:8px;">
+      <button class="btn btn-danger btn-sm" id="lbDelete">Delete photo</button>
+    </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', e=>{ if(e.target===el) el.remove(); });
+  el.querySelector('#lbClose').addEventListener('click', ()=> el.remove());
+  el.querySelector('#lbDelete').addEventListener('click', async ()=>{
+    p.photos = (p.photos||[]).filter(x=>x.id!==photo.id);
+    await dbPut(p);
+    el.remove();
+    renderTabPanel();
+    refreshTabCounts();
+    showToast('Photo deleted.');
+  });
+}
+
+/* ---------- Documents tab ---------- */
+function docIcon(type){
+  if(type && type.indexOf('pdf')!==-1) return '📕';
+  if(type && type.indexOf('image')!==-1) return '🖼️';
+  return '📄';
+}
+function documentsTabHTML(p){
+  let html = '<div class="storage-banner">PDFs and screenshots are stored as-is. Files over ~4.4MB will be skipped with a note.</div>';
+  html += `<label class="btn btn-primary btn-sm" style="display:inline-flex;margin-bottom:14px;">＋ Add document<input type="file" accept="application/pdf,image/*" id="docInput" style="display:none;" multiple></label>`;
+  const docs = (p.documents||[]).slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  if(docs.length===0){
+    html += '<div class="empty-tab">No documents uploaded yet.</div>';
+  } else {
+    docs.forEach(d=>{
+      html += `<div class="doc-row">
+        <div class="doc-icon">${docIcon(d.mime)}</div>
+        <div class="doc-info">
+          <div class="doc-name">${esc(d.name)}</div>
+          <div class="doc-meta">${fmtDate(d.date)} · ${fmtBytes(d.sizeBytes)}</div>
+        </div>
+        <a class="btn btn-soft btn-sm" href="${d.url}" target="_blank" rel="noopener" download="${esc(d.name)}">View</a>
+        <button class="btn btn-danger btn-sm" data-del-doc="${d.id}">Delete</button>
+      </div>`;
+    });
+  }
+  return html;
+}
+function wireDocumentsTab(p){
+  const input = document.getElementById('docInput');
+  input.addEventListener('change', async ()=>{
+    const files = Array.from(input.files || []);
+    input.value = '';
+    for(const file of files){
+      if(file.size > MAX_FILE_BYTES){
+        showToast(`Skipped "${file.name}" — ${fmtBytes(file.size)} is over the ~4.4MB cap.`, true);
+        continue;
+      }
+      const url = URL.createObjectURL(file);
+      p.documents = p.documents || [];
+      p.documents.push({id:uid(), date: todayISO(), name:file.name, mime:file.type, blob:file, url, sizeBytes:file.size});
+      await dbPut(p);
+      showToast('Document added.');
+    }
+    renderTabPanel();
+    refreshTabCounts();
+  });
+  document.querySelectorAll('[data-del-doc]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      p.documents = (p.documents||[]).filter(x=>x.id!==btn.getAttribute('data-del-doc'));
+      await dbPut(p);
+      renderTabPanel();
+      refreshTabCounts();
+    });
+  });
+}
+
+/* ---------- WhatsApp tab ---------- */
+const WA_TEMPLATES = {
+  reminder: (name)=> `مرحباً ${name || 'عزيزنا المريض'}،\nهذه رسالة تذكير بموعدك القادم في العيادة. يرجى الرد لتأكيد الحضور. شكراً لك!`,
+  followup: (name)=> `مرحباً ${name || 'عزيزنا المريض'}،\nنتابع معك بعد زيارتك الأخيرة. كيف حالك الآن؟ يرجى التواصل إذا كان لديك أي استفسار.`,
+  results: (name)=> `مرحباً ${name || 'عزيزنا المريض'}،\nنتائج الفحوصات جاهزة الآن. يرجى الاتصال بالعيادة أو الرد هنا لتحديد موعد لمراجعتها.`,
+  preop: (name)=> `مرحباً ${name || 'عزيزنا المريض'}،\nقبل إجراء العملية القادمة، يرجى مراجعة تعليمات ما قبل العملية، ولا تتردد في التواصل إذا كانت لديك أي أسئلة.`
+};
+function whatsappTabHTML(p){
+  const phoneDigits = (p.phone||'').replace(/[^0-9]/g,'');
+  let html = '';
+  if(!phoneDigits){
+    html += '<div class="storage-banner">This patient has no phone number saved yet — add one via Edit to use WhatsApp.</div>';
+  }
+  html += '<div class="wa-templates">';
+  html += `<button class="wa-chip${state.waTemplate==='reminder'?' active':''}" data-wa="reminder">Reminder</button>`;
+  html += `<button class="wa-chip${state.waTemplate==='followup'?' active':''}" data-wa="followup">Follow-up</button>`;
+  html += `<button class="wa-chip${state.waTemplate==='results'?' active':''}" data-wa="results">Results ready</button>`;
+  html += `<button class="wa-chip${state.waTemplate==='preop'?' active':''}" data-wa="preop">Pre-op</button>`;
+  html += `<button class="wa-chip${state.waTemplate==='custom'?' active':''}" data-wa="custom">Free text</button>`;
+  html += '</div>';
+  html += `<div class="wa-preview"><textarea id="waTextarea" dir="auto" placeholder="Choose a template or write your own message…">${esc(state.waText)}</textarea></div>`;
+  html += `<div class="wa-send-row">
+    <span class="wa-to">To: ${phoneDigits ? '+'+esc(phoneDigits) : 'no number on file'}</span>
+    <button class="btn btn-primary" id="openWaBtn" ${phoneDigits?'':'disabled'}>Open in WhatsApp</button>
+  </div>`;
+  html += '<div class="field-hint" style="margin-top:10px;">Opens WhatsApp with the message pre-filled — you still tap Send yourself. Nothing is sent automatically.</div>';
+  return html;
+}
+function wireWhatsappTab(p){
+  document.querySelectorAll('.wa-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const key = chip.getAttribute('data-wa');
+      state.waTemplate = key;
+      state.waText = key==='custom' ? state.waText : WA_TEMPLATES[key](p.name);
+      renderTabPanel();
+    });
+  });
+  const ta = document.getElementById('waTextarea');
+  ta.addEventListener('input', ()=>{ state.waText = ta.value; });
+  const openBtn = document.getElementById('openWaBtn');
+  if(openBtn){
+    openBtn.addEventListener('click', ()=>{
+      const phoneDigits = (p.phone||'').replace(/[^0-9]/g,'');
+      if(!phoneDigits) return;
+      const text = (document.getElementById('waTextarea').value || '').trim();
+      const url = `https://wa.me/${phoneDigits}${text ? '?text=' + encodeURIComponent(text) : ''}`;
+      window.open(url, '_blank', 'noopener');
+    });
+  }
+}
+
+function refreshTabCounts(){
+  // Re-render just the tab bar counts + panel wrapper without losing scroll on panel content unnecessarily.
+  renderDetail();
+}
+
+/* =========================================================
+   Modals — add / edit patient, delete confirm
+   ========================================================= */
+function closeModal(){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = '';
+}
+function openPatientModal(existing){
+  const isEdit = !!existing;
+  const p = existing || {};
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-box">
+      <h3 class="modal-title">${isEdit ? 'Edit patient' : 'New patient'}</h3>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Full name</label>
+        <input type="text" id="mName" value="${esc(p.name||'')}" placeholder="e.g. Sara Ahmed">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Record number</label>
+          <input type="text" id="mRecord" value="${esc(p.recordNumber||'')}" placeholder="Leave blank to auto-generate">
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" id="mPhone" value="${esc(p.phone||'')}" placeholder="Country code, no leading 0 or +">
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>Date of birth (optional)</label>
+        <input type="date" id="mDob" value="${esc(p.dob||'')}">
+      </div>
+      <div class="field-hint">Phone should include country code with no leading 0 or + (e.g. 201234567890) so WhatsApp links work correctly.</div>
+      <div class="modal-actions">
+        <button class="btn btn-soft" id="mCancel">Cancel</button>
+        <button class="btn btn-primary" id="mSave">${isEdit ? 'Save changes' : 'Create patient'}</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('mCancel').addEventListener('click', closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click', e=>{ if(e.target.id==='modalBackdrop') closeModal(); });
+  document.getElementById('mSave').addEventListener('click', async ()=>{
+    const name = document.getElementById('mName').value.trim();
+    let recordNumber = document.getElementById('mRecord').value.trim();
+    const phone = document.getElementById('mPhone').value.trim();
+    const dob = document.getElementById('mDob').value;
+    if(!name){ showToast('Please enter a name.', true); return; }
+
+    if(isEdit){
+      const target = getCurrent();
+      target.name = name;
+      target.recordNumber = recordNumber || target.recordNumber || nextRecordNumber();
+      target.phone = phone;
+      target.dob = dob;
+      await dbPut(target);
+      closeModal();
+      showToast('Patient updated.');
+      renderDetail();
+    } else {
+      const fresh = newPatientShell();
+      fresh.name = name;
+      fresh.recordNumber = recordNumber || nextRecordNumber();
+      fresh.phone = phone;
+      fresh.dob = dob;
+      await dbPut(fresh);
+      await loadAll();
+      closeModal();
+      state.currentId = fresh.id;
+      state.view = 'detail';
+      state.tab = 'visits';
+      showToast('Patient created.');
+      render();
+    }
+  });
+  document.getElementById('mName').focus();
+}
+
+function confirmDeletePatient(p){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-box">
+      <h3 class="modal-title">Delete ${esc(p.name)||'this patient'}?</h3>
+      <p style="font-size:13.5px;color:var(--ink-soft);">This permanently deletes this patient's record, including all visits, notes, photos and documents stored on this device. This cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-soft" id="mCancel">Cancel</button>
+        <button class="btn btn-danger" id="mConfirm">Delete permanently</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('mCancel').addEventListener('click', closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click', e=>{ if(e.target.id==='modalBackdrop') closeModal(); });
+  document.getElementById('mConfirm').addEventListener('click', async ()=>{
+    await dbDelete(p.id);
+    await loadAll();
+    closeModal();
+    state.view = 'list';
+    state.currentId = null;
+    showToast('Patient deleted.');
+    render();
+  });
+}
+
+/* =========================================================
+   Root render + boot
+   ========================================================= */
+function render(){
+  if(state.view === 'detail' && getCurrent()){
+    renderDetail();
+  } else {
+    state.view = 'list';
+    renderList();
+  }
+}
+
+document.getElementById('newPatientBtn').addEventListener('click', ()=> openPatientModal(null));
+document.getElementById('googleSyncBtn').addEventListener('click', openGoogleSyncModal);
+
+(async function boot(){
+  document.getElementById('mainView').innerHTML = '<div class="empty-state"><p>Loading…</p></div>';
+  await loadAll();
+  render();
+})();
+
+})();
+</script>
+</body>
+</html>
